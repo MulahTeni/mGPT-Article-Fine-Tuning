@@ -4,7 +4,7 @@ from datasets import Dataset
 import re
 import logging
 
-logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(filename='app.log', filemode='a+', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 
 def get_page_data(session, url, page, class_name, count):
@@ -12,6 +12,7 @@ def get_page_data(session, url, page, class_name, count):
         get all text from the urls in the given web page
     """
     full_url = f'{url}{page}'
+    print(full_url)
     try:
         r = session.get(full_url)
         soup = BeautifulSoup(r.content, 'html.parser')
@@ -20,7 +21,7 @@ def get_page_data(session, url, page, class_name, count):
         print(f'New page link: {full_url}')
         
     except Exception as e:
-        logging.error(f'Error connecting to {full_url}: {e}')
+        logging.error(f'Error connecting to main link {full_url}: {e}')
         return [], count
 
     articles = []
@@ -32,7 +33,7 @@ def get_page_data(session, url, page, class_name, count):
                 link_soup = BeautifulSoup(link_response.content, 'html.parser')
                 
             except Exception as e:
-                logging.error(f'Error connecting to {href}: {e}')
+                logging.error(f'Error connecting to sub link {href}: {e}')
                 continue
 
             article_body = link_soup.find('p', itemprop='articleBody')
@@ -63,7 +64,7 @@ def get_all_data(url, class_name, page_prefix, page_count):
     with requests.Session() as session:
         count = 1
         for i in range(1, page_count + 1):
-            page_data, count = get_page_data(session, url, f'{page_prefix}{i}', class_name, count)
+            page_data, count = get_page_data(session, url, f'{page_prefix}{i + 241}', class_name, count)
             all_data.extend(page_data)
             
     return all_data
@@ -91,5 +92,10 @@ if __name__ == '__main__':
         url = f"https://www.koseyazisioku.com/sabah/{author}"
         class_name = 'yazaryazilari'
         page_prefix = '?s='
-        all_pages_data = get_all_data(url, class_name, page_prefix, page_count)
+        all_pages_data = get_all_data(url, class_name, page_prefix, page_count - 241)
+        if not all_pages_data:
+            logging.error(f'Error all_pages_data is null')
+            print(f'Error all_pages_data is null')
+            continue
         save_data(author, all_pages_data)
+        break
